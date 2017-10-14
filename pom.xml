@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>groupId</groupId>
+	<artifactId>fileStatisticsEngine</artifactId>
+	<version>1.0</version>
+	<properties>
+		<flyway.version>4.2.0</flyway.version>
+		<junit.version>4.12</junit.version>
+		<postgres.driver.version>9.4-1200-jdbc41</postgres.driver.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+			<version>${flyway.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${postgres.driver.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.1</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!--Copies dependencies into executable jar file-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<!-- Build an executable JAR -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>com.company.FileStatisticEngine</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<!-- Read db properties for install goal-->
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>properties-maven-plugin</artifactId>
+				<version>1.0-alpha-1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>read-project-properties</goal>
+						</goals>
+						<phase>process-resources</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<files>
+						<file>src/main/resources/db.properties</file>
+					</files>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<!-- Executes migration of the DB-->
+				<groupId>org.flywaydb</groupId>
+				<artifactId>flyway-maven-plugin</artifactId>
+				<version>${flyway.version}</version>
+				<configuration>
+					<sqlMigrationSeparator>__</sqlMigrationSeparator>
+					<locations>
+						<location>classpath:flyway/migrations</location>
+					</locations>
+					<url>${database.url}${database.name}</url>
+					<user>${database.user}</user>
+					<password>${database.password}</password>
+				</configuration>
+				<executions>
+					<execution>
+						<id>create-db</id>
+						<goals>
+							<goal>migrate</goal>
+						</goals>
+						<phase>compile</phase>
+						<configuration>
+							<url>jdbc:postgresql://localhost:5432/</url>
+							<user>postgres</user>
+							<password>secret</password>
+							<url>${database.url}</url>
+							<placeholders>
+								<DATABASE.NAME>${database.name}</DATABASE.NAME>
+							</placeholders>
+							<locations>
+								<location>com/company/db/init</location>
+							</locations>
+							<callbacks>
+								<callback>com.company.db.init.CreateDatabase</callback>
+							</callbacks>
+						</configuration>
+					</execution>
+					<execution>
+						<goals>
+							<goal>migrate</goal>
+						</goals>
+						<phase>compile</phase>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.postgresql</groupId>
+						<artifactId>postgresql</artifactId>
+						<version>${postgres.driver.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
