@@ -120,9 +120,6 @@
 						</goals>
 						<phase>compile</phase>
 						<configuration>
-							<url>jdbc:postgresql://localhost:5432/</url>
-							<user>postgres</user>
-							<password>secret</password>
 							<url>${database.url}</url>
 							<placeholders>
 								<DATABASE.NAME>${database.name}</DATABASE.NAME>
